@@ -11,6 +11,8 @@ import {
   watch,
   nextTick,
 } from "vue";
+import ChatContent from "../../chat";
+import ChatTabs from "./chat-tabs";
 
 // 默认值
 const default_mine = {
@@ -50,6 +52,10 @@ export default {
       default: () => [],
     },
   },
+  components: {
+      ChatTabs,
+      ChatContent,
+    },
   setup(props, ctx) {
     const chatDisplay = ref(true);
     // 具体实例
