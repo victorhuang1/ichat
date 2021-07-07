@@ -157,30 +157,81 @@ export default {
 
     // 页面加载后调用
     onMounted(() => {
+      calcPaneInstances();
       initWindowPosition();
     });
 
+    // 页面数据变动后调用
+    onUpdated(() => {
+      calcPaneInstances();
+    });
+    // 提供子组件 inject 获取
+    provide("rootChat", {
+      config,
+      chatDisplay,
+      selected,
+    });
+    provide("updatePaneStateCallback", (pane) => {
+      paneStateMap[pane.uid] = pane;
+    });
     return {
+      panes,
+      selected,
       chatDisplay,
       handleDragWindow,
+      paneStateMap,
     };
   },
+  methods: {
+    // 处理会话框显示
+    handleChatDisplay() {
+      this.chatDisplay = !this.chatDisplay;
+    },
+    // 处理会话标签单击事件
+    handleTabClick(pane) {
+      this.selected = pane.index;
+    },
+    // 处理会话标签删除事件
+    handleTabRemove(pane) {
+      console.log(pane);
+    },
+  },
   render() {
-    let { mine, chats, chatDisplay, handleDragWindow } = this;
-    const el_chat_panes = h(
-      "div",
-      { class: ["im-chat-main"], style: { height: "500px" } },
-      [h("div", { class: ["im-pane-item"] })]
-    );
+    let {
+      mine,
+      chats,
+      chatDisplay,
+      panes,
+      handleChatDisplay,
+      handleTabClick,
+      handleTabRemove,
+      handleDragWindow,
+    } = this;
+    const el_chat_panes = renderList(chats, (chat) => {
+      // 构建会话窗口
+      return h(ChatContent, {
+        chat,
+      });
+    });
+    // 会话标签
+    const el_chat_tabs = h(ChatTabs, {
+      panes,
+      onTabClick: handleTabClick,
+      onTabRemove: handleTabRemove,
+      onChatDisplay: handleChatDisplay,
+      onDragWindow: handleDragWindow,
+    });
+    // 主体内容
     // 主体内容
     const el_chat_content = h(
       "div",
       {
         class: ["im-layer-tabs", "im-layer-content"],
+        ref: "ChatContent",
       },
-      [el_chat_panes]
+      [el_chat_tabs, el_chat_panes]
     );
-    // 窗口设定栏
+    // 窗口设定烂
     const el_chat_win_setting = h(
       "span",
       {
