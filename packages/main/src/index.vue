@@ -57,10 +57,54 @@ export default {
       ChatContent,
     },
   setup(props, ctx) {
+    // 会话框组件集合
+    const panes = ref([]);
+    //  当前选中的会话框，以 index 索引为key
+    const selected = ref("0");
+    //  会话框状态 键值对
+    const paneStateMap = {};
+
     const chatDisplay = ref(true);
     // 具体实例
     const instance = getCurrentInstance();
     let { config, mine, chats } = props;
+
+    // 过滤出 chat 对话框 filterPaneComponents
+    const filterPaneComponents = (vnode = [], componentInstances = []) => {
+    Array.from(vnode || []).forEach((node) => {
+      let type = node.type;
+      type = type.name || type;
+      if (type === "chat-content" && node.component) {
+        componentInstances.push(node.component);
+      } else {
+        filterPaneComponents(node.children, componentInstances);
+      }
+    });
+    return componentInstances;
+  };
+  // 计算会话框实例 calcPaneInstances
+  const calcPaneInstances = () => {
+  //  因为没有使用 slot 所以不用 slots.default() 作为判断依据
+  if (instance.subTree.children) {
+    const children = instance.subTree.children;
+    if (!children) return;
+    const paneVNodes = filterPaneComponents(children).map((item) => {
+      return paneStateMap[item.uid];
+    });
+    // 通过 pane 的uid 判断是否有变动，避免死循环
+    const panesChanged = !(
+      paneVNodes.length === panes.value.length &&
+      paneVNodes.every((item, index) => item.uid === panes.value[index].uid)
+    );
+    if (panesChanged) {
+      panes.value = paneVNodes;
+      selected.value = "0";
+    }
+  } else if (panes.value.length !== 0) {
+    panes.value = [];
+  }
+};
+
 
     // 初始化设置 聊天窗口的位置
     const initWindowPosition = () => {
